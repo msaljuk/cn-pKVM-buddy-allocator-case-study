@@ -9,8 +9,15 @@ echo "--- Mode: $MODE ---"
 $CC -E -P -CC driver.c > driver.pp.c
 
 LUA_FLAG=""
+
 if [ "$MODE" = "lua" ]; then
     LUA_FLAG="--experimental-lua-runtime"
+
+    echo "Building Lua source: make -C $RUNTIME_PREFIX/lua/src liblua.a"
+    make -C "$RUNTIME_PREFIX/lua/src" liblua.a || { echo "Failed to build Lua source"; exit 1; }
+
+    echo "Building Lua cn wrappers: make -C $RUNTIME_PREFIX/lua/cn lua_wrappers.a"
+    make -C "$RUNTIME_PREFIX/lua/cn" lua_wrappers.a || { echo "Failed to build Lua cn wrappers"; exit 1; }
 fi
 
 cn instrument ./driver.pp.c \
