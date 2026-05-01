@@ -25,8 +25,6 @@ cn instrument ./driver.pp.c \
 echo "Compiling ($MODE)..."
 
 INC="-I$RUNTIME_PREFIX/include"
-[[ "$MODE" = "lua" ]] && INC="$INC -I$RUNTIME_PREFIX/include/cn-lua"
-
 $CC -g -c -O0 -std=gnu11 $INC $FLAGS build/driver.pp.exec.c -o build/driver.pp.exec.o
 
 echo "Linking ($MODE)..."
