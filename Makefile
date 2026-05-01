@@ -1,7 +1,16 @@
-CC=clang
-BUILD=build
-INCLUDES=stddef.h posix_types.h getorder.h
-CNFLAGS= --without-lemma-checks --without-loop-invariants --exec-c-locs-mode
+CC = clang
+CFLAGS = -g -O0 -std=gnu11
+
+BUILD = build
+INCLUDES = stddef.h posix_types.h getorder.h
+
+CNFLAGS = --without-lemma-checks --without-loop-invariants --exec-c-locs-mode
+CNLUAFLAGS = --experimental-lua-runtime 
+
+CFLAGS += -I$(OPAM_SWITCH_PREFIX)/lib/cn/runtime/include
+LIBS = -L$(OPAM_SWITCH_PREFIX)/lib/cn/runtime -lcn_exec
+LUALIBS = -lcn_lua -lm
+
 
 .PHONY: clean run
 
@@ -18,21 +27,21 @@ $(BUILD)/driver.pp.exec.c: $(BUILD)/driver.pp.c
 	sed -e"/ cerb::hidden .*bswap64/d" < $@~ > $@
 
 $(BUILD)/driver.pp.lua.c: $(BUILD)/driver.pp.c
-	cn instrument --experimental-lua-runtime $< --output=driver.pp.lua.c --output-dir=$(BUILD) $(CNFLAGS)
+	cn instrument $< --output=driver.pp.lua.c --output-dir=$(BUILD) $(CNFLAGS) $(CNLUAFLAGS)
 	mv $@ $@~
 	sed -e"/ cerb::hidden .*bswap64/d" < $@~ > $@
 
 $(BUILD)/driver.pp.exec.o: $(BUILD)/driver.pp.exec.c
-	$(CC) -g -c -O0 -std=gnu11 -I$(OPAM_SWITCH_PREFIX)/lib/cn/runtime/include $< -o $@
+	$(CC) -c $(CFLAGS) $< -o $@
 
 $(BUILD)/driver.pp.lua.o: $(BUILD)/driver.pp.lua.c
-	$(CC) -g -c -O0 -std=gnu11 -I$(OPAM_SWITCH_PREFIX)/lib/cn/runtime/include $< -o $@
+	$(CC) -c $(CFLAGS) $< -o $@
 
 $(BUILD)/driver.exe: $(BUILD)/driver.pp.exec.o
-	$(CC) $< -o $@ -L$(OPAM_SWITCH_PREFIX)/lib/cn/runtime -lcn_exec
+	$(CC) $< -o $@ $(LIBS)
 
 $(BUILD)/driver.lua.exe: $(BUILD)/driver.pp.lua.o
-	$(CC) $< -o $@ -L$(OPAM_SWITCH_PREFIX)/lib/cn/runtime -lcn_exec -lcn_lua -lm
+	$(CC) $< -o $@ $(LIBS) $(LUALIBS)
 
 clean:
 	rm -rf $(BUILD)
