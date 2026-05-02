@@ -37,6 +37,9 @@ $(BUILD)/driver.pp.exec.o: $(BUILD)/driver.pp.exec.c
 $(BUILD)/driver.pp.lua.o: $(BUILD)/driver.pp.lua.c
 	$(CC) -c $(CFLAGS) $< -o $@
 
+$(BUILD)/driver.pp.lua.o: $(BUILD)/driver.pp.lua.c
+	$(CC) -g -c -O0 -std=gnu11 -I$(OPAM_SWITCH_PREFIX)/lib/cn/runtime/include -I$(OPAM_SWITCH_PREFIX)/lib/cn/runtime/include/cn-lua $< -o $@
+
 $(BUILD)/driver.exe: $(BUILD)/driver.pp.exec.o
 	$(CC) $< -o $@ $(LIBS)
 
