@@ -1,3 +1,5 @@
+#!/bin/sh
+
 CC=${CC:-clang}
 MODE=${MODE:-c}
 RUNTIME_PREFIX=$OPAM_SWITCH_PREFIX/lib/cn/runtime
@@ -10,15 +12,7 @@ $CC -E -P -CC driver.c > driver.pp.c
 
 LUA_FLAG=""
 
-if [ "$MODE" = "lua" ]; then
-    LUA_FLAG="--experimental-lua-runtime"
-
-    echo "Building Lua source: make -C $RUNTIME_PREFIX/lua/src liblua.a"
-    make -C "$RUNTIME_PREFIX/lua/src" liblua.a || { echo "Failed to build Lua source"; exit 1; }
-
-    echo "Building Lua cn wrappers: make -C $RUNTIME_PREFIX/lua/cn lua_wrappers.a"
-    make -C "$RUNTIME_PREFIX/lua/cn" lua_wrappers.a || { echo "Failed to build Lua cn wrappers"; exit 1; }
-fi
+[[ "$MODE" = "lua" ]] && LUA_FLAG="--experimental-lua-runtime"
 
 cn instrument ./driver.pp.c \
     --output=driver.pp.exec.c \
@@ -29,20 +23,16 @@ cn instrument ./driver.pp.c \
     $LUA_FLAG
 
 echo "Compiling ($MODE)..."
-INC="-I$RUNTIME_PREFIX/include"
-if [ "$MODE" = "lua" ]; then
-    INC="$INC -I$RUNTIME_PREFIX/lua/src -I$RUNTIME_PREFIX/lua/cn"
-fi
 
-$CC -g -c -O0 -std=gnu11 $INC build/driver.pp.exec.c -o build/driver.pp.exec.o
+INC="-I$RUNTIME_PREFIX/include"
+[[ "$MODE" = "lua" ]] && INC="$INC -I$RUNTIME_PREFIX/include/cn-lua"
+
+$CC -g -c -O0 -std=gnu11 $INC $FLAGS build/driver.pp.exec.c -o build/driver.pp.exec.o
 
 echo "Linking ($MODE)..."
 if [ "$MODE" = "lua" ]; then
-    LUA_LIBS="$RUNTIME_PREFIX/lua/src/liblua.a $RUNTIME_PREFIX/lua/cn/lua_wrappers.a"
     $CC build/driver.pp.exec.o \
-        $RUNTIME_PREFIX/libcn_exec.a \
-        $LUA_LIBS \
-        -ldl -lm \
+        -L $RUNTIME_PREFIX -lcn_exec -lcn_lua -ldl -lm \
         -o build/driver.exe
 else
     $CC build/driver.pp.exec.o \
@@ -52,8 +42,7 @@ else
 fi
 
 echo "Running $MODE-instrumented driver..."
-for i in $(seq 1 10);
-do
+for i in $(seq 1 10); do
     gtime -f "~%e~%M" ./build/driver.exe
 done
 
