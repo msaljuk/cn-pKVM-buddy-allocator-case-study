@@ -1,6 +1,7 @@
 #!/bin/sh
 
 CC=${CC:-clang}
+CCFLAGS='-g -c -O2 -std=gnu11'
 
 # rm -rf build/
 mkdir -p build
